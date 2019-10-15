@@ -1,0 +1,15 @@
+F:\VS2010\Serial\SerialApplication\SerialApplication\bin\Debug\SerialApplication.exe
+F:\VS2010\Serial\SerialApplication\SerialApplication\bin\Debug\SerialApplication.pdb
+F:\VS2010\Serial\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.Form1.resources
+F:\VS2010\Serial\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.Properties.Resources.resources
+F:\VS2010\Serial\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.csproj.GenerateResource.Cache
+F:\VS2010\Serial\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.exe
+F:\VS2010\Serial\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.pdb
+G:\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.csprojResolveAssemblyReference.cache
+G:\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.Form1.resources
+G:\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.Properties.Resources.resources
+G:\SerialApplication\SerialApplication\obj\x86\Debug\SerialApplication.csproj.GenerateResource.Cache
+G:\SerialApplication\SerialApplication\bin\Debug\UartAssistant.exe
+G:\SerialApplication\SerialApplication\bin\Debug\UartAssistant.pdb
+G:\SerialApplication\SerialApplication\obj\x86\Debug\UartAssistant.exe
+G:\SerialApplication\SerialApplication\obj\x86\Debug\UartAssistant.pdb

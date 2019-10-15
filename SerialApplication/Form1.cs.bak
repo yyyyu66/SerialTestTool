@@ -1,0 +1,297 @@
+﻿using System;
+using System.Text;
+using System.Windows.Forms;
+//使用SerialPort所需的的模块
+using System.IO.Ports;
+using System.Threading;
+
+namespace SerialApplication
+{
+    public partial class Form1 : Form
+    {
+        public SerialPort port1 = new SerialPort();
+        public StringBuilder builder = new StringBuilder();
+        //**创建一个用于显示时间的定时器
+        System.Timers.Timer AutoSend_timer = new System.Timers.Timer(1000);
+
+        //Thread thread_SendData;   //发送数据线程
+        public Form1()
+        {
+            InitializeComponent();
+            AutoSend_timer.Elapsed += new System.Timers.ElapsedEventHandler(SendData);
+            AutoSend_timer.AutoReset = true;
+            AutoSend_timer.Enabled   = true;
+            AutoSend_timer.Interval  = 1000;
+            AutoSend_timer.Stop();
+            //获取串口信息
+            string[] ports = SerialPort.GetPortNames();
+            foreach (string s in ports)
+            {
+                comboBox_Serial.Items.Add(s);
+            }
+            comboBox_Serial.SelectedIndex = 0;
+
+            //设置波特率
+            comboBox_Baurd.Items.Add("9600");
+            comboBox_Baurd.Items.Add("19200");
+            comboBox_Baurd.Items.Add("38400");
+            comboBox_Baurd.Items.Add("57600");
+            comboBox_Baurd.Items.Add("115200");
+            //comboBox_Baurd.Items.Add("Custom");
+            comboBox_Baurd.SelectedIndex = 0;
+            comboBox_Baurd.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            //设置数据位
+            comboBox_DataBits.Items.Add("5");
+            comboBox_DataBits.Items.Add("6");
+            comboBox_DataBits.Items.Add("7");
+            comboBox_DataBits.Items.Add("8");
+            comboBox_DataBits.SelectedIndex = 3;
+            //校验位
+            comboBox_Parity.Items.Add("None");
+            comboBox_Parity.Items.Add("Odd");
+            comboBox_Parity.Items.Add("Even");
+            comboBox_Parity.Items.Add("Mark");
+            comboBox_Parity.Items.Add("Space");
+            comboBox_Parity.SelectedIndex = 0;
+            //停止位
+            comboBox_StopBits.Items.Add("1");
+            comboBox_StopBits.Items.Add("1.5");
+            comboBox_StopBits.Items.Add("2");
+            comboBox_StopBits.SelectedIndex = 0;
+            //流控
+            comboBox_FlowControl.Items.Add("None");
+            comboBox_FlowControl.Items.Add("RTS/CTS");
+            comboBox_FlowControl.Items.Add("XON/XOFF");
+            comboBox_FlowControl.SelectedIndex = 0;
+
+            radioButton_ASCII.Checked = true;
+            radioButton_ASCII2.Checked = true;
+            port1.DataReceived += new SerialDataReceivedEventHandler(port1_DataReceived);
+        }
+				///设置并打开串口
+        private void button_OpenSerial_Click(object sender, EventArgs e)
+        {
+            try { 
+                if (port1.IsOpen == false)
+                { 
+                    port1.PortName = comboBox_Serial.SelectedItem.ToString();
+                    comboBox_Serial.Enabled = false;
+
+                    //波特率
+                    Console.WriteLine("Custom" + comboBox_Baurd.SelectedIndex);
+                    switch (comboBox_Baurd.SelectedIndex)
+                    {
+                        case 0:     port1.BaudRate =   9600;    break;
+                        case 1:     port1.BaudRate =  19200;    break;
+                        case 2:     port1.BaudRate =  38400;    break;
+                        case 3:     port1.BaudRate =  57600;    break;
+                        case 4:     port1.BaudRate = 115200;    break;
+                        //case 5:
+                        //    {
+                        //        string tmp = comboBox_Baurd.SelectedItem.ToString();
+                        //        Console.WriteLine("Custom"+tmp);
+                        //        port1.BaudRate = Convert.ToInt32(tmp);
+                        //        break;
+                        //    }
+                        default:    break;
+                    }
+                    Console.WriteLine("波特率" + port1.BaudRate);
+                    comboBox_Baurd.Enabled = false;
+                    
+                    //数据位
+                    port1.DataBits = Convert.ToInt32(comboBox_DataBits.SelectedItem.ToString());
+                    Console.WriteLine("数据位" + comboBox_DataBits.SelectedItem);
+                    comboBox_DataBits.Enabled = false;
+                    //检验位
+                    switch (comboBox_Parity.SelectedIndex)
+                    {
+                        case 0: port1.Parity = Parity.None;  break;
+                        case 1: port1.Parity = Parity.Odd;   break;
+                        case 2: port1.Parity = Parity.Even;  break;
+                        case 3: port1.Parity = Parity.Mark;  break;
+                        case 4: port1.Parity = Parity.Space; break;
+                        default: break;
+                    }
+                    comboBox_Parity.Enabled = false;
+                    Console.WriteLine("检验位"+comboBox_Parity.SelectedItem);
+                    //停止位
+                    switch (comboBox_StopBits.SelectedIndex)
+                    {
+                        case 0: port1.StopBits = StopBits.One; break;
+                        case 1: port1.StopBits = StopBits.OnePointFive; break;
+                        case 2: port1.StopBits = StopBits.Two; break;
+                        default: break;
+                    }
+                    comboBox_StopBits.Enabled = false;
+                    Console.WriteLine("停止位" + comboBox_StopBits.SelectedItem);
+                    //流控
+                    switch (comboBox_FlowControl.SelectedIndex)
+                    {
+                        case 0: port1.Handshake = Handshake.None; break;
+                        case 1: port1.Handshake = Handshake.RequestToSend; break;
+                        case 2: port1.Handshake = Handshake.XOnXOff; break;
+                        default: break;
+                    }
+                    comboBox_FlowControl.Enabled = false;
+                    Console.WriteLine("流控" + comboBox_FlowControl.SelectedItem);
+
+                    port1.ReceivedBytesThreshold = 1;  //接收到一个字节就触发事件
+                    port1.Encoding = Encoding.Default;
+                    port1.Open();
+                    button_OpenSerial.Text = "关闭";
+                }
+                else
+                {
+                    AutoSend_timer.Stop();
+                    port1.Close();
+
+                    button_OpenSerial.Text       = "打开";
+                    comboBox_Serial.Enabled      = true;
+                    comboBox_Baurd.Enabled       = true;
+                    comboBox_DataBits.Enabled    = true;
+                    comboBox_Parity.Enabled      = true;
+                    comboBox_FlowControl.Enabled = true;
+                    comboBox_StopBits.Enabled    = true;
+                }
+            }catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message,"提示");
+                comboBox_Serial.Enabled = true;
+                comboBox_Baurd.Enabled = true;
+                comboBox_DataBits.Enabled = true;
+                comboBox_Parity.Enabled = true;
+                comboBox_FlowControl.Enabled = true;
+                comboBox_StopBits.Enabled = true;
+            }
+        }
+				
+				///串口数据接收函数
+        void port1_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            string data = string.Empty;
+            while(port1.BytesToRead > 0)
+            {
+                data += port1.ReadExisting();  //数据读取,直到读完缓冲区数据
+            }
+ 
+            //更新界面内容时UI不会卡
+            Invoke((EventHandler)delegate
+            {
+                //定义一个textBox控件用于接收消息并显示
+                if(radioButton_ASCII.Checked)
+                {
+                    if (checkBox_ShowTime.Checked)
+                        richTextBox_ShowRec.AppendText("[" + DateTime.Now.TimeOfDay.ToString()+"]" + ":");
+                    richTextBox_ShowRec.AppendText(data + Environment.NewLine);
+                }
+                else if(radioButton_HEX.Checked)
+                {
+                    char[] value = data.ToCharArray();
+                    string result = "0x";
+                    foreach(char letter in value)
+                    {
+                        int tmp = Convert.ToInt32(letter);
+                        result += ( " " + string.Format("{0:X}", tmp));
+                    }
+                    if (checkBox_ShowTime.Checked)
+                        richTextBox_ShowRec.AppendText("[" + DateTime.Now.TimeOfDay.ToString() + "]" + ":");
+                    richTextBox_ShowRec.AppendText(result + Environment.NewLine);
+                }
+            });
+        }
+
+				///串口发送数据
+        private void button_SendData_Click(object sender, EventArgs e)
+        {              
+            try
+            {
+                string sendInfo = richTextBox_SendText.Text;
+                byte[] datas = Encoding.Default.GetBytes(sendInfo);
+                if (radioButton_ASCII2.Checked)
+                { 
+                    //Console.WriteLine("{0} {1} {2}", port1.PortName, sendInfo, sendInfo.Length);
+                    port1.WriteLine(sendInfo);
+                }
+                else if(radioButton_HEX2.Checked)
+                {
+                    port1.Write(datas, 0, datas.Length);
+                    //Console.WriteLine("{0} {1} {2}", port1.PortName, sendInfo, sendInfo.Length);
+                }
+                if (checkBox2.Checked)
+                    richTextBox_ShowRec.AppendText("[" + DateTime.Now.TimeOfDay.ToString() + "]" + ":" + sendInfo + "\n");
+
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message, "发送出错");
+            }   
+        }
+
+				///清空显示区
+        private void button1_Click(object sender, EventArgs e)
+        {
+            richTextBox_ShowRec.Clear();
+        }
+
+				//退出程序
+        private void button2_Click(object sender, EventArgs e)
+        {
+            port1.Close();
+            Close();
+        }
+
+        private void comboBox_Baurd_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            //port1.BaudRate = Convert.ToInt32(comboBox_Baurd.SelectedItem.ToString());
+        }
+
+				///显示时间
+        private void timer_Systemtime_Tick(object sender, EventArgs e)
+        {
+            label8.Text = DateTime.Now.ToLocalTime().ToString();
+        }
+
+				///自动重复发送数据功能
+        private void checkBox3_CheckedChanged(object sender, EventArgs e)
+        {
+            if(checkBox_AutoSend.Checked)
+            {
+                if (port1.IsOpen == false)
+                {
+                    return;
+                }
+                AutoSend_timer.Interval = Convert.ToDouble(numericUpDown_Interval.Value);
+                AutoSend_timer.Start();
+            }
+            else
+            {
+                AutoSend_timer.Stop();
+            }
+        }
+        void SendData(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            Invoke((EventHandler)delegate {
+                try
+                {
+                    string sendInfo = richTextBox_SendText.Text;
+                    byte[] datas = Encoding.Default.GetBytes(sendInfo);
+                    if (radioButton_ASCII2.Checked)
+                    {
+                        port1.WriteLine(sendInfo);
+                    }
+                    else if (radioButton_HEX2.Checked)
+                    {
+                        port1.Write(datas, 0, datas.Length);
+                    }              
+                        if (checkBox2.Checked)
+                            richTextBox_ShowRec.AppendText("[" + DateTime.Now.TimeOfDay.ToString() + "]" + ":" + sendInfo + "\n");
+                }
+                catch (Exception ex)
+                {
+                    AutoSend_timer.Stop();
+                    MessageBox.Show(ex.Message, "发送出错");
+                }
+            });
+        }
+    }
+}
